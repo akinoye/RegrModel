@@ -2,7 +2,7 @@
 title: "How Transmission Type 'Automatic' or 'Manual' affect MPG"
 author: "Oye Akinnikawe"
 date: "January 17, 2017"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
