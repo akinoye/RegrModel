@@ -1,0 +1,115 @@
+---
+title: "How Transmission Type 'Automatic' or 'Manual' affect MPG"
+author: "Oye Akinnikawe"
+date: "January 17, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Executive Summary
+
+In this document, the *mtcars* dataset was used to explore the relationship between a set of variables and miles per gallon (MPG) the outcome. We were particularly interested in answering the question whether automatic or manual transmission is better for MPG, and to quantify the MPG difference between automatic and manual transmissions. From our analysis, we can show that automatic transmission is better for mpg and the MPG difference between automatic and manual transmission is **1.81 MPG**
+
+## Data Analysis
+first we will load the required libraries and data, then we will take a quick peek at the data. 
+
+```{r library, echo=TRUE}
+library(ggplot2)
+data(mtcars)
+head(mtcars)
+```
+
+
+We need to transform some of the variables in ***mtcars*** into factors. This will help in data exploration (shown in boxplot in Appendix) and obtaining better models during regression analysis.
+
+```{r factor, echo=TRUE}
+mtcars$cyl <- factor(mtcars$cyl)
+mtcars$am <- factor(mtcars$am,labels=c("Automatic","Manual"))
+```
+
+Get the mean for the factors of *am* i.e automatic and manual
+
+```{r mean, echo=TRUE}
+aggregate(mpg~am, data = mtcars, mean)
+```
+
+Thus, we will use the hypothesies that manual cars have a **7.25 MPG** higher than automatic cars. 
+
+Split the variable *am* into "auto" and "manual"
+
+```{r split, echo=TRUE}
+auto <- mtcars[mtcars$am == "Automatic",]
+manual <- mtcars[mtcars$am == "Manual",]
+```
+
+We perform a t.test to see if there is a significant difference between the mean *mpg* for automatic and manual cars
+
+```{r test, echo=TRUE}
+t.test(auto$mpg,manual$mpg)
+```
+
+The p-value of 0.001374 states that there is a significant difference in the mpg values for automatic and manual cars. we have to quantify this using regression models.
+
+We will perform an initial linear fit for mpg~am, then we will add more variables to the regression to see if other variables have an effect on our model.
+
+```{r initial fit, echo=TRUE}
+## perform initial lm fit for mpg~am
+fit1 <- lm(mpg ~ am, data = mtcars)
+summary(fit1)
+```
+
+The initial model shows that mean *mpg* for automatic cars is 17.15 MPG while that of manual cars is 7.25 MPG higher. The R^2^ value of 0.36 shows that only 36% of the total variability is explained by our model. We need to try using multivariate linear regression to better fit our model.
+
+```{r second fit, echo=TRUE}
+## perform fit2 by adding other variables
+fit2 <- lm(mpg ~ am + cyl + disp, data = mtcars)
+```
+
+```{r final fit, echo=TRUE}
+## perform fit3 by adding more variables
+fit3 <- lm(mpg ~ am + cyl + disp + hp + wt, data = mtcars)
+```
+
+Next, we perform an analysis of variance to see if the second and third model fits were necessary
+
+```{r anova, echo=TRUE}
+#$Analysis of Variance
+anova(fit1, fit2, fit3)
+```
+
+The p-values test whether or not the new variables are necessary. This model concludes that all of the added Model 3 terms are necessary over Model 2 and all of the Model 2 terms are necessary over Model 1. Therefore, we will select Model 3.
+
+```{r summary fit, echo=TRUE}
+summary(fit3)
+```
+
+The selected model *fit3* explains 87% of the total variability in our model. The addition of *cyl*, *disp*, *hp*, and *wt* affected the correlation between  *mpg* and *am*. From our model, the difference between automatic and manual transmission is **1.81 MPG**
+
+## Appendix
+
+The appendix shows some of the exploratory data analysis that was performed. Plot 1 shows the box plot of mpg vs transmission type, Plot 2 shows a pairs plot for selected variables, and plot 3 shows the residual plot used for investigating model fit.
+
+```{r plot1, echo=TRUE}
+boxplot(mpg ~ am, data = mtcars, ylab = "Miles Per Gallon",
+        xlab = "Transmission Type", main = "mpg vs transmission type",
+        col = (c("red","blue")))
+```
+
+```{r plot2, echo=TRUE}
+#Pairs plot
+mtcars_vars <- mtcars[, c(1,2,3,4,6,9)]
+par(mar = c(1,1,1,1))
+pairs(mtcars_vars, panel = panel.smooth, col = mtcars$wt + 1)
+```
+
+```{r plot3, echo=TRUE}
+##residual plot
+par(mar = c(4,4,4,4))
+par(mfrow=c(2,2))
+plot(fit3)
+```
+
+
